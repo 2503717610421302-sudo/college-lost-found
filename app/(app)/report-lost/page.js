@@ -20,6 +20,7 @@ export default function ReportLostPage() {
 
   const [form, setForm] = useState({
     title: '', category: '', description: '', location: '', event_date: '', additional_details: '',
+    urgency: 'normal', reward: '',
   })
   const [errors, setErrors] = useState({})
   const [image, setImage] = useState(null)
@@ -74,6 +75,8 @@ export default function ReportLostPage() {
         location: form.location,
         event_date: form.event_date,
         additional_details: form.additional_details.trim() || null,
+        urgency: form.urgency || 'normal',
+        reward: form.reward.trim() || null,
         image_url,
         item_type: 'lost',
         status: 'active',
@@ -119,6 +122,21 @@ export default function ReportLostPage() {
           </Select>
 
           <Input label="Date Lost *" type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} error={errors.event_date} max={new Date().toISOString().split('T')[0]} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select label="Priority / Urgency Level" value={form.urgency} onChange={(e) => setForm({ ...form, urgency: e.target.value })}>
+              <option value="normal">Normal (Standard Belonging)</option>
+              <option value="high">High Priority (Phone, Keys, Wallet)</option>
+              <option value="critical">🚨 Exam / Critical (Hall Ticket, ID Card)</option>
+            </Select>
+
+            <Input
+              label="Reward / Token of Appreciation (Optional)"
+              placeholder="e.g. ₹200 or Coffee at Canteen"
+              value={form.reward}
+              onChange={(e) => setForm({ ...form, reward: e.target.value })}
+            />
+          </div>
 
           <Textarea label="Additional Identifying Details" placeholder="Any unique marks, serial numbers, or other details that only you would know..." value={form.additional_details} onChange={(e) => setForm({ ...form, additional_details: e.target.value })} rows={3} />
 

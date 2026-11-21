@@ -56,11 +56,19 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg text-gray-900">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-gray-900 group">
+            <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform">
               <Search className="w-4 h-4 text-white" />
             </div>
-            <span>CampusFinder</span>
+            <div>
+              <div className="text-base font-extrabold tracking-tight text-gray-900 flex items-center gap-1.5 leading-none">
+                CampusFinder
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  CAMPUS
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-400 font-medium">Lost & Found Portal</span>
+            </div>
           </Link>
 
           {/* Desktop Nav */}

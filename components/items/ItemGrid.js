@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import ItemCard from '@/components/items/ItemCard'
 import SearchFilters from '@/components/items/SearchFilters'
 import { CardSkeleton } from '@/components/ui/Skeleton'
-import { ChevronLeft, ChevronRight, PackageOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PackageOpen, Sparkles } from 'lucide-react'
+import { DEMO_PRESET_ITEMS } from '@/lib/constants'
 
 const PAGE_SIZE = 12
 
@@ -15,6 +16,7 @@ export default function ItemGrid({ itemType }) {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [filters, setFilters] = useState({ query: '', category: '', location: '', status: '', date: '' })
+  const [showDemo, setShowDemo] = useState(false)
   const debounceRef = useRef(null)
   const supabase = createClient()
 
@@ -23,7 +25,7 @@ export default function ItemGrid({ itemType }) {
     try {
       let query = supabase
         .from('items')
-        .select('id, title, description, category, item_type, location, event_date, image_url, status, created_at', { count: 'exact' })
+        .select('id, title, description, category, item_type, location, event_date, image_url, status, urgency, reward, created_at', { count: 'exact' })
         .eq('item_type', itemType)
         .order('created_at', { ascending: false })
         .range((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE - 1)
@@ -37,8 +39,22 @@ export default function ItemGrid({ itemType }) {
       if (currentFilters.date) query = query.gte('event_date', currentFilters.date)
 
       const { data, count } = await query
-      setItems(data || [])
-      setTotal(count || 0)
+      if (data && data.length > 0) {
+        setItems(data)
+        setTotal(count || 0)
+        setShowDemo(false)
+      } else {
+        // Filter demo items by type as a presentation fallback
+        const demoFiltered = DEMO_PRESET_ITEMS.filter(i => i.item_type === itemType)
+        setItems(demoFiltered)
+        setTotal(demoFiltered.length)
+        setShowDemo(true)
+      }
+    } catch {
+      const demoFiltered = DEMO_PRESET_ITEMS.filter(i => i.item_type === itemType)
+      setItems(demoFiltered)
+      setTotal(demoFiltered.length)
+      setShowDemo(true)
     } finally {
       setLoading(false)
     }
@@ -67,6 +83,12 @@ export default function ItemGrid({ itemType }) {
         <p className="text-sm text-gray-500">
           {loading ? 'Searching...' : `${total} item${total !== 1 ? 's' : ''} found`}
         </p>
+        {showDemo && !loading && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2.5 py-1 rounded-full">
+            <Sparkles className="w-3 h-3 text-indigo-500" />
+            Project Demo Preset Active
+          </span>
+        )}
       </div>
 
       {loading ? (

@@ -34,6 +34,8 @@ create table if not exists public.items (
   event_date date not null,
   image_url text,
   additional_details text,
+  urgency text not null default 'normal' check (urgency in ('normal', 'high', 'critical')),
+  reward text,
   status text not null default 'active' check (status in ('active', 'claimed', 'returned', 'closed')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
