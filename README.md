@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# CampusFinder — College Lost & Found Management System
 
-## Getting Started
+A complete, production-ready College Lost & Found platform built with Next.js, Supabase, and Tailwind CSS.
 
-First, run the development server:
+## Features
+
+- 🔐 **Authentication** — Supabase email/password auth with email verification
+- 📋 **Lost & Found Reports** — Detailed item reporting with image uploads
+- 🔍 **Search & Filters** — Full-text search with category, location, status filters
+- 📬 **Recovery Claims** — Complete claim workflow with proof submission
+- 🔔 **Notifications** — In-app notifications for claim updates
+- 👨‍💼 **Admin Dashboard** — Platform oversight and content moderation
+- 📱 **Responsive** — Mobile-first design
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), React, Tailwind CSS, Lucide Icons
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Deployment**: Vercel
+
+## Quick Start
 
 ```bash
+git clone <repo-url>
+cd college-lost-found
+npm install
+cp .env.example .env.local
+# Fill in your Supabase credentials in .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup Guide
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+See [API_KEYS_AND_SETUP.md](./API_KEYS_AND_SETUP.md) for the full setup guide including:
+- Supabase project creation
+- Database migrations
+- Storage bucket configuration
+- Vercel deployment
+- Admin user setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+college-lost-found/
+├── app/
+│   ├── (auth)/              # Login, Register, Forgot/Reset Password
+│   ├── (app)/               # Protected pages
+│   │   ├── dashboard/
+│   │   ├── report-lost/
+│   │   ├── report-found/
+│   │   ├── my-reports/
+│   │   ├── my-claims/
+│   │   ├── notifications/
+│   │   ├── profile/
+│   │   ├── admin/
+│   │   └── items/[id]/
+│   ├── browse-lost/
+│   ├── browse-found/
+│   ├── layout.js
+│   └── page.js              # Landing page
+├── components/
+│   ├── layout/              # Navbar, Footer
+│   ├── ui/                  # Button, Input, Skeleton, ConfirmDialog
+│   └── items/               # ItemCard, ItemGrid, SearchFilters
+├── contexts/                # AuthContext, ToastContext
+├── lib/
+│   ├── supabase/            # client.js, server.js, middleware.js
+│   ├── constants.js
+│   └── utils.js
+├── supabase/migrations/     # SQL migration files
+├── middleware.js
+└── .env.example
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Database Schema
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **profiles** — User profiles (extends Supabase auth)
+- **items** — Lost and found item reports
+- **claims** — Recovery requests and their status
+- **notifications** — In-app notifications
+- **reports** — Content moderation reports
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All tables have Row Level Security (RLS) enabled.
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
