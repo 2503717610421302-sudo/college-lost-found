@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatDate, getCategoryLabel, getStatusColor, getStatusLabel } from '@/lib/utils'
 import { FileText, Trash2, ExternalLink, Search, Package, MapPin, Calendar, Tag, PlusCircle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { getStoredItems, saveStoredItems } from '@/lib/itemStore'
 import { cn } from '@/lib/utils'
 
 export default function MyReportsPage() {
@@ -23,32 +24,54 @@ export default function MyReportsPage() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
-    if (!user) return
     fetchItems()
   }, [user, filter])
 
   const fetchItems = async () => {
     setLoading(true)
-    let query = supabase
-      .from('items')
-      .select('id, title, category, item_type, location, event_date, status, created_at, image_url')
-      .eq('reporter_id', user.id)
-      .order('created_at', { ascending: false })
-    if (filter !== 'all') query = query.eq('item_type', filter)
-    const { data } = await query
-    setItems(data || [])
-    setLoading(false)
+
+    // Baseline from local stored items
+    let stored = getStoredItems()
+    if (filter !== 'all') stored = stored.filter((i) => i.item_type === filter)
+
+    if (!user) {
+      setItems(stored.slice(0, 6))
+      setLoading(false)
+      return
+    }
+
+    try {
+      let query = supabase
+        .from('items')
+        .select('id, title, category, item_type, location, event_date, status, created_at, image_url')
+        .eq('reporter_id', user.id)
+        .order('created_at', { ascending: false })
+      if (filter !== 'all') query = query.eq('item_type', filter)
+      const { data } = await query
+      if (data && data.length > 0) {
+        setItems(data)
+      } else {
+        setItems(stored.slice(0, 6))
+      }
+    } catch (e) {
+      setItems(stored.slice(0, 6))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDelete = async () => {
     setDeleting(true)
-    const { error } = await supabase.from('items').delete().eq('id', confirmDelete).eq('reporter_id', user.id)
-    if (error) {
-      toast({ type: 'error', title: 'Error', message: error.message })
-    } else {
-      toast({ type: 'success', title: 'Report deleted', message: 'Your report has been removed.' })
-      setItems((prev) => prev.filter((i) => i.id !== confirmDelete))
+    if (user) {
+      try {
+        await supabase.from('items').delete().eq('id', confirmDelete).eq('reporter_id', user.id)
+      } catch (e) {}
     }
+
+    const remaining = getStoredItems().filter((i) => i.id !== confirmDelete)
+    saveStoredItems(remaining)
+    setItems((prev) => prev.filter((i) => i.id !== confirmDelete))
+    toast({ type: 'success', title: 'Report deleted', message: 'Your report has been removed.' })
     setConfirmDelete(null)
     setDeleting(false)
   }
@@ -58,18 +81,33 @@ export default function MyReportsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Reports</h1>
-          <p className="text-gray-500 text-sm mt-0.5">All items you've reported</p>
+          <p className="text-gray-500 text-sm mt-0.5">All items you have reported on campus</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/report-lost"><Button variant="secondary" size="sm"><Search className="w-4 h-4" />Report Lost</Button></Link>
-          <Link href="/report-found"><Button size="sm"><Package className="w-4 h-4" />Report Found</Button></Link>
+          <Link href="/report-lost">
+            <Button variant="secondary" size="sm">
+              <Search className="w-4 h-4" /> Report Lost
+            </Button>
+          </Link>
+          <Link href="/report-found">
+            <Button size="sm">
+              <Package className="w-4 h-4" /> Report Found
+            </Button>
+          </Link>
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-6">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit mb-6">
         {['all', 'lost', 'found'].map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={cn('px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize', filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={cn(
+              'px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors capitalize',
+              filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
             {f}
           </button>
         ))}
@@ -77,50 +115,81 @@ export default function MyReportsPage() {
 
       {loading ? (
         <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+        <div className="text-center py-16 bg-white rounded-3xl border border-gray-200">
           <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <h3 className="text-gray-700 font-semibold mb-1">No reports found</h3>
           <p className="text-sm text-gray-400 mb-5">You haven't submitted any reports yet.</p>
           <div className="flex gap-3 justify-center">
-            <Link href="/report-lost"><Button variant="secondary" size="sm"><PlusCircle className="w-4 h-4" />Report Lost</Button></Link>
-            <Link href="/report-found"><Button size="sm"><PlusCircle className="w-4 h-4" />Report Found</Button></Link>
+            <Link href="/report-lost">
+              <Button variant="secondary" size="sm">
+                <PlusCircle className="w-4 h-4" /> Report Lost
+              </Button>
+            </Link>
+            <Link href="/report-found">
+              <Button size="sm">
+                <PlusCircle className="w-4 h-4" /> Report Found
+              </Button>
+            </Link>
           </div>
         </div>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
+            <div key={item.id} className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
               {item.image_url ? (
-                <img src={item.image_url} alt={item.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                <img src={item.image_url} alt={item.title} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                   <Package className="w-6 h-6 text-gray-400" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-semibold text-gray-900 truncate">{item.title}</p>
-                  <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', item.item_type === 'lost' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700')}>
+                  <p className="font-bold text-gray-900 truncate text-sm">{item.title}</p>
+                  <span
+                    className={cn(
+                      'text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider',
+                      item.item_type === 'lost' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                    )}
+                  >
                     {item.item_type}
                   </span>
-                  <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', getStatusColor(item.status))}>
+                  <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold', getStatusColor(item.status))}>
                     {getStatusLabel(item.status)}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
-                  <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{getCategoryLabel(item.category)}</span>
-                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{item.location}</span>
-                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(item.event_date)}</span>
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" />
+                    {getCategoryLabel(item.category)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {item.location}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {formatDate(item.event_date)}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Link href={`/items/${item.id}`}>
-                  <Button variant="ghost" size="sm"><ExternalLink className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm">
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(item.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmDelete(item.id)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

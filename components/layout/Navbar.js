@@ -28,7 +28,7 @@ const userLinks = [
 ]
 
 export default function Navbar() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, isDemoUser, signOut } = useAuth()
   const { toast } = useToast()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -114,9 +114,14 @@ export default function Navbar() {
                     <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-indigo-600" />
                     </div>
-                    <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-24 truncate">
+                    <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-28 truncate">
                       {profile?.full_name || 'Account'}
                     </span>
+                    {isDemoUser && (
+                      <span className="hidden sm:inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                        DEMO
+                      </span>
+                    )}
                   </button>
 
                   {userMenuOpen && (

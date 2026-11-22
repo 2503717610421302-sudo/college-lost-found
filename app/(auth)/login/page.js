@@ -4,14 +4,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useToast } from '@/contexts/ToastContext'
-import { Search, Eye, EyeOff } from 'lucide-react'
+import { Search, Eye, EyeOff, Sparkles, ShieldCheck, UserCheck } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { loginAsDemo } = useAuth()
   const supabase = createClient()
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
@@ -42,6 +44,16 @@ export default function LoginPage() {
     }
   }
 
+  const handleDemoLogin = (role) => {
+    loginAsDemo(role)
+    toast({
+      type: 'success',
+      title: `Logged in as ${role === 'admin' ? 'Campus Admin' : 'College Student'}`,
+      message: 'Demo session loaded. All features are fully interactive!'
+    })
+    router.push('/dashboard')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -53,10 +65,42 @@ export default function LoginPage() {
             CampusFinder
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-6">Welcome back</h1>
-          <p className="text-gray-500 mt-1">Sign in to your account</p>
+          <p className="text-gray-500 mt-1">Sign in to your college account</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          {/* Quick Demo Access for Testing / Evaluation */}
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+            <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2.5">
+              <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
+              Instant Demo Access (No password needed)
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('student')}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                Demo Student
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('admin')}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-xs font-semibold shadow-sm transition-all"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Demo Admin
+              </button>
+            </div>
+          </div>
+
+          <div className="relative flex py-2 items-center mb-4">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink mx-3 text-xs font-medium text-gray-400">or sign in with password</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Email address"
